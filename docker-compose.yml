@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  agent:
+    build:
+      context: ./agent
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - actions-cache:/actions-cache
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_ORG_URL=${GITHUB_ORG_URL}
+      - DESIRED_RUNNERS=${DESIRED_RUNNERS:-3}
+      - RUNNER_PREFIX=${RUNNER_PREFIX:-github-runner}
+      - ACTIONS_CACHE_DIR=/actions-cache
+    restart: always
+    depends_on:
+      - runner-base
+
+  runner-base:
+    build:
+      context: ./runner
+      args:
+        - RUNNER_VERSION=${RUNNER_VERSION:-2.321.0}
+    image: github-runner:latest
+    volumes:
+      - actions-cache:/actions-cache
+    environment:
+      - ACTIONS_CACHE_DIR=/actions-cache
+    # This service just builds the image and exits
+    entrypoint: ["echo", "Runner base image built"]
+
+volumes:
+  actions-cache:
+    name: github-actions-build-cache
